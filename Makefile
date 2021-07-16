@@ -5,8 +5,9 @@ lib.name = midifile
 class.sources = midifile.c
 
 datafiles = \
+        I_Wanna_Be_Sedated.mid \
         LICENSE.txt \
-        README.txt \
+        README.md \
         midifile-help.pd \
         midifile-meta.pd
 
