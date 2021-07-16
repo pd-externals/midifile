@@ -4,7 +4,11 @@ lib.name = midifile
 
 class.sources = midifile.c
 
-datafiles = midifile-help.pd midifile-meta.pd README.txt LICENSE.txt
+datafiles = \
+        LICENSE.txt \
+        README.txt \
+        midifile-help.pd \
+        midifile-meta.pd
 
 # This Makefile is based on the Makefile from pd-lib-builder written by
 # Katja Vetter. You can get it from:
