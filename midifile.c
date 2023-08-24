@@ -584,7 +584,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
         pd_error (x, "midifile_meta: first argument not an integer on [0..255]");
         return;
     }
-    metaType = atom_getint(&argv[0]);
+    metaType = (int)atom_getint(&argv[0]);
     if (x->verbosity > 1) post ("midifile_meta: metaType %d", metaType);
     switch (metaType)
     {
@@ -603,7 +603,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                 post ("midifile_meta: parameter not a number");
                 return;
             }
-            j = atom_getint(&argv[1]);
+            j = (int)atom_getint(&argv[1]);
             if (x->verbosity > 1) post ("midifile_meta: Sequence Number %d", j);
             nbWritten = midifile_begin_meta(x, metaType);
             // Sequence Number Meta
@@ -667,7 +667,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                 post ("midifile_meta: parameter not a number");
                 return;
             }
-            j = atom_getint(&argv[1]);
+            j = (int)atom_getint(&argv[1]);
             if (j <0 || j >15)
             {
                 post ("midifile_meta: channel number out of range [0-15]");
@@ -703,7 +703,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                 post ("midifile_meta: parameter not a number");
                 return;
             }
-            jj = atom_getint(&argv[1]);
+            jj = (int)atom_getint(&argv[1]);
             if ((jj < 0) || (jj > 0xFFFFFF))
             {
                 post ("midifile_meta: Tempo out of range [0-16777215]");
@@ -734,7 +734,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                     post ("midifile_meta: parameter %d not a number", i);
                     return;
                 }
-                j = atom_getint(&argv[i]);
+                j = (int)atom_getint(&argv[i]);
                 if ((j < 0) || (j > 127))
                 {
                   post ("midifile_meta: SMPTE value out of range [0-127]"); // this won't catch all range errors
@@ -768,7 +768,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                     post ("midifile_meta: parameter %d not a number", i);
                     return;
                 }
-                j = atom_getint(&argv[i]);
+                j = (int)atom_getint(&argv[i]);
                 if ((j < 0) || (j > 127))
                 {
                   post ("midifile_meta: Time Signature value out of range [0-127]"); // this won't catch all range errors
@@ -802,7 +802,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                     post ("midifile_meta: parameter %d not a number", i);
                     return;
                 }
-                j = atom_getint(&argv[i]);
+                j = (int)atom_getint(&argv[i]);
                 if ((i == 1) && ((j < -7) || (j > 7)))
                 {
                   post ("midifile_meta: Key Signature value out of range [-7-+7]");
@@ -949,7 +949,7 @@ static void midifile_list(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
     {
         if (A_FLOAT == argv[i].a_type)
         {
-            j = atom_getint(&argv[i]);
+            j = (int)atom_getint(&argv[i]);
             if (x->verbosity > 2) post ("midifile_list. j[%d]	= 0x%lX", i, j);
             if (j < 0x100)
             {
@@ -977,7 +977,7 @@ static void midifile_list(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                                 x->track_chunk[x->track].chunk_length += written;
                                 return;
                             }
-                            m = atom_getint(&argv[k]);
+                            m = (int)atom_getint(&argv[k]);
                             if (m & 0x80) break;/* take any non-data as end of exclusive */
                         }
                         if (m != 0xF7)
@@ -995,7 +995,7 @@ static void midifile_list(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                         /* write the rest of the sysex message */
                         for (k = i+1; j != 0xF7; ++k)
                         {
-                            j = atom_getint(&argv[k]);
+                            j = (int)atom_getint(&argv[k]);
                             putc (j, x->tmpFP[x->track]);
                             ++written;
                         }
