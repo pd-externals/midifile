@@ -435,7 +435,7 @@ static FILE *midifile_open_track_file(t_midifile *x, int trackNr)
 
     strncpy(trackPath, x->fPath, PATH_BUF_SIZE);
     if (x->verbosity > 2) post("midifile_open_track_file: main file path is %s", trackPath);
-    i = strlen(trackPath);
+    i = (int)strlen(trackPath);
     sprintf(&trackPath[i], "%d.trk", trackNr);
     if (x->verbosity > 2) post("midifile_open_track_file: track path is %s", trackPath);
     fP = sys_fopen(trackPath, "w+b");
@@ -455,7 +455,7 @@ static int midifile_delete_track_file(t_midifile *x, int trackNr)
 
     strncpy(trackPath, x->fPath, PATH_BUF_SIZE);
     if (x->verbosity > 2) post("midifile_delete_track_file: main file path is %s", trackPath);
-    i = strlen(trackPath);
+    i = (int)strlen(trackPath);
     sprintf(&trackPath[i], "%d.trk", trackNr);
     if (x->verbosity > 2) post("midifile_delete_track_file: \"%s\"", trackPath);
     result = remove(trackPath);
@@ -643,7 +643,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
             sPtr = (char *)argv[1].a_w.w_symbol->s_name;
             nbWritten = midifile_begin_meta(x, metaType);
             // a textual Event Meta
-            len = strlen(sPtr);
+            len = (int)strlen(sPtr);
             nbWritten += midifile_write_variable_length_value(x->tmpFP[x->track], len);
             for (jj = 0; jj < len; ++jj)
             {
