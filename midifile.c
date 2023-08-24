@@ -1127,7 +1127,7 @@ static int midifile_read_header_chunk(t_midifile *x)
     }
     rewind(x->fP);
     x->offset = 0L;
-    n = fread(cP, 1L, 4L, x->fP);
+    n = (uint32_t)fread(cP, 1L, 4L, x->fP);
     x->offset += n;
     if (n != 4L)
     {
@@ -1141,21 +1141,21 @@ static int midifile_read_header_chunk(t_midifile *x)
         return 0;
     }
     cP = (unsigned char *)buf;
-    n = fread(cP, 1L, 4L, x->fP);
+    n = (uint32_t)fread(cP, 1L, 4L, x->fP);
     x->offset += n;
     if (n != 4L)
     {
         pd_error(x, "midifile: read %d instead of 4", n);
         return 0;
     }
-    x->header_chunk.chunk_length = midifile_get_multibyte_4(cP);
+    x->header_chunk.chunk_length = (uint32_t)midifile_get_multibyte_4(cP);
     if (x->verbosity) post("midifile: Header chunk length: %lu", x->header_chunk.chunk_length);
     if (x->header_chunk.chunk_length != 6L)
     {
         pd_error (x, "midifile: bad file format: bad header chunk length");
         return 0;
     }
-    n = fread(cP, 1L, 2L, x->fP);
+    n = (uint32_t)fread(cP, 1L, 2L, x->fP);
     x->offset += n;
     if (n != 2L)
     {
@@ -1181,7 +1181,7 @@ static int midifile_read_header_chunk(t_midifile *x)
     SETFLOAT(&output_atom, x->header_chunk.chunk_format);
     outlet_anything( x->status_outlet, gensym("format"), 1, &output_atom);
 
-    n = fread(cP, 1L, 2L, x->fP);
+    n = (uint32_t)fread(cP, 1L, 2L, x->fP);
     x->offset += n;
     if (n != 2L)
     {
@@ -1198,7 +1198,7 @@ static int midifile_read_header_chunk(t_midifile *x)
             x->header_chunk.chunk_ntrks, MAX_TRACKS);
         x->header_chunk.chunk_ntrks = MAX_TRACKS;
     }
-    n = fread(cP, 1L, 2L, x->fP);
+    n = (uint32_t)fread(cP, 1L, 2L, x->fP);
     x->offset += n;
     if (n != 2L)
     {
@@ -1246,7 +1246,7 @@ static int midifile_read_track_chunk(t_midifile *x, int mfTrack)
         pd_error(x, "midifile: no open file");
         return 0;/* no open file */
     }
-    n = fread(cP, 1L, 4L, x->fP);
+    n = (uint32_t)fread(cP, 1L, 4L, x->fP);
     x->offset += n;
     if (n != 4L)
     {
@@ -1264,14 +1264,14 @@ static int midifile_read_track_chunk(t_midifile *x, int mfTrack)
     type[3] = cP[3];
     type[4] = '\0';
     cP = (unsigned char *)buf;
-    n = fread(cP, 1L, 4L, x->fP);
+    n = (uint32_t)fread(cP, 1L, 4L, x->fP);
     x->offset += n;
     if (n != 4L)
     {
         pd_error(x, "midifile: read %d instead of 4", n);
         return 0;
     }
-    len = midifile_get_multibyte_4(cP);
+    len = (uint32_t)midifile_get_multibyte_4(cP);
     x->track_chunk[mfTrack].chunk_length = len;
     if (x->verbosity) post("midifile: Track chunk %d type: %s, length %d", mfTrack, type, len);
     if ((cP = getbytes(len)) == NULL)
@@ -1280,7 +1280,7 @@ static int midifile_read_track_chunk(t_midifile *x, int mfTrack)
         return 0;
     }
     x->track_chunk[mfTrack].track_data = (unsigned char*)cP;	
-    n = fread(cP, 1L, len, x->fP);
+    n = (uint32_t)fread(cP, 1L, len, x->fP);
 
     return 1;
 }
@@ -1375,7 +1375,7 @@ static unsigned char *midifile_read_var_len (unsigned char *cP, uint32_t *delta)
             value = (value << 7) + ((c = *(cP++)) & 0x7f);
         } while (c & 0x80);
     }
-    *delta = value;
+    *delta = (uint32_t)value;
     return cP;
 }
 
@@ -1918,7 +1918,7 @@ static void midifile_get_next_track_chunk_data(t_midifile *x, int mfTrack)
                             tt[0] = *cP++;
                             tt[1] = *cP++;
                             tt[2] = *cP++;
-                            time_sig = midifile_get_multibyte_3(tt);
+                            time_sig = (uint32_t)midifile_get_multibyte_3(tt);
                             if (x->verbosity) post ("midifile: %lu microseconds per MIDI quarter-note", time_sig);
                             SETFLOAT(&output_atom[0], time_sig);
                             outlet_anything( x->status_outlet, gensym("microsec_per_quarternote"), 1, output_atom);
@@ -2067,7 +2067,7 @@ static void midifile_get_next_track_chunk_data(t_midifile *x, int mfTrack)
                     mfTrack, x->track_chunk[mfTrack].total_time + delta_time);
         }
     }
-    x->track_chunk[mfTrack].track_index = (char *)cP - (char *)x->track_chunk[mfTrack].track_data;
+    x->track_chunk[mfTrack].track_index = (uint32_t)((char *)cP - (char *)x->track_chunk[mfTrack].track_data);
     x->track_chunk[mfTrack].delta_time = delta_time;
     if (delta_time == NO_MORE_ELEMENTS) x->track_chunk[mfTrack].total_time = delta_time;
     else x->track_chunk[mfTrack].total_time += delta_time;
@@ -2162,7 +2162,7 @@ static void midifile_skip_next_track_chunk_data(t_midifile *x, int mfTrack)
             cP += n;
         }
     }
-    x->track_chunk[mfTrack].track_index = (char *)cP - (char *)x->track_chunk[mfTrack].track_data;
+    x->track_chunk[mfTrack].track_index = (uint32_t)((char *)cP - (char *)x->track_chunk[mfTrack].track_data);
     x->track_chunk[mfTrack].delta_time = delta_time;
     if (delta_time == NO_MORE_ELEMENTS) x->track_chunk[mfTrack].total_time = delta_time;
     else x->track_chunk[mfTrack].total_time += delta_time;
