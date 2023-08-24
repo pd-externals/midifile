@@ -122,7 +122,7 @@ static int midifile_read_chunks(t_midifile *x);
 static void midifile_close(t_midifile *x);
 static void midifile_free_file(t_midifile *x);
 static void midifile_free(t_midifile *x);
-static int midifile_open_path(t_midifile *x, char *path, char *mode);
+static int midifile_open_path(t_midifile *x, const char *path, char *mode);
 static void midifile_flush(t_midifile *x);
 static uint32_t midifile_write_header(t_midifile *x, int nTracks);
 static void midifile_read(t_midifile *x, t_symbol *path);
@@ -196,6 +196,8 @@ static void *midifile_new(t_symbol *s, int argc, t_atom *argv)
     t_midifile  *x = (t_midifile *)pd_new(midifile_class);
     t_symbol    *pathSymbol;
     int         i;
+
+    (void)s; /* silence unused param warning */
 
     x->fP = NULL;
     x->fPath[0] = '\0';
@@ -298,7 +300,7 @@ static void midifile_free(t_midifile *x)
 - x->fPath will be used as a file name to open.
 - Returns 1 if successful, else 0. 
 */
-static int midifile_open_path(t_midifile *x, char *path, char *mode)
+static int midifile_open_path(t_midifile *x, const char *path, char *mode)
 {
     FILE    *fP = NULL;
     char    tryPath[PATH_BUF_SIZE];
@@ -482,7 +484,9 @@ static void midifile_write(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
     int         frames_per_second = 0;/* default */
     int         ticks_per_frame = 90; /* default*/
 
-    if ((argc >= 1) && (argv[0].a_type == A_SYMBOL)) path = argv[0].a_w.w_symbol->s_name;
+    (void)s; /* silence unused param warning */
+
+    if ((argc >= 1) && (argv[0].a_type == A_SYMBOL)) path = (char *)argv[0].a_w.w_symbol->s_name;
     else pd_error(x, "midifile_write: No valid path name");
     if (argc == 2)
     {
@@ -563,6 +567,8 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
     char    c;
     uint32_t  len;
 
+    (void)s; /* silence unused param warning */
+
     if ((x->state != mfWriting) || (x->tmpFP[x->track] == NULL))
     { /* list only works for writing */
         pd_error (x, "midifile_meta: no file is open for writing");
@@ -634,7 +640,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                 post ("midifile_meta: parameter not a symbol");
                 return;
             }
-            sPtr = argv[1].a_w.w_symbol->s_name;
+            sPtr = (char *)argv[1].a_w.w_symbol->s_name;
             nbWritten = midifile_begin_meta(x, metaType);
             // a textual Event Meta
             len = strlen(sPtr);
@@ -925,6 +931,8 @@ static void midifile_list(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
     int         i, j, k, m = 0, dt_written = 0;
     uint32_t      len, written = 0L;
     static int  warnings = 0;
+
+    (void)s; /* silence unused param warning */
 
     if (x->state != mfWriting) return;/* list only works for writing */
     if (x->tmpFP[x->track] == NULL)
