@@ -293,12 +293,12 @@ static void midifile_free(t_midifile *x)
     midifile_free_file(x);
 }
 
-/** midifile_open_path attempts to open a file. 
+/** midifile_open_path attempts to open a file.
 - path is a string.
 - Up to PATH_BUF_SIZE-1 characters will be copied into x->fPath.
 - mode should be "rb" or "wb".
 - x->fPath will be used as a file name to open.
-- Returns 1 if successful, else 0. 
+- Returns 1 if successful, else 0.
 */
 static int midifile_open_path(t_midifile *x, const char *path, char *mode)
 {
@@ -617,7 +617,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
         case 3:
         case 4:
         case 5:
-        case 6: 
+        case 6:
         case 7:
             if (x->verbosity > 1)
             {
@@ -832,7 +832,7 @@ static void midifile_meta(t_midifile *x, t_symbol *s, int argc, t_atom *argv)
                 post ("midifile_meta: not enough parameters");
                 return;
             }
-            post ("Sequencer-Specific Meta-Event not implemented yet.");            
+            post ("Sequencer-Specific Meta-Event not implemented yet.");
             break;
         default:
             post("Unknown Meta tag %d", metaType);
@@ -857,7 +857,7 @@ static void midifile_read(t_midifile *x, t_symbol *path)
     {
         if (x->verbosity) post("midifile: opened %s", x->fPath);
         x->state = mfReading;
-        if (midifile_read_chunks(x) == 0) midifile_free_file(x); // 
+        if (midifile_read_chunks(x) == 0) midifile_free_file(x); //
     }
     else pd_error(x, "midifile: Unable to open %s", path->s_name);
 }
@@ -1090,8 +1090,8 @@ static void midifile_float(t_midifile *x, t_float ticks)
 
 /** midifile_read_chunks reads in the MIDI file chunks.
 *
-- calls midifile_read_header_chunk() and then 
-- calls midifile_read_track_chunk() for each track 
+- calls midifile_read_header_chunk() and then
+- calls midifile_read_track_chunk() for each track
 */
 static int midifile_read_chunks(t_midifile *x)
 {
@@ -1116,7 +1116,7 @@ static int midifile_read_header_chunk(t_midifile *x)
     unsigned char   *cP = (unsigned char *)x->header_chunk.chunk_type;
     char            *sP;
     char            buf[4];
-    uint32_t          n;
+    uint32_t        n;
     int             div, smpte, ticks;
     t_atom          output_atom;
 
@@ -1239,7 +1239,7 @@ static int midifile_read_track_chunk(t_midifile *x, int mfTrack)
     unsigned char   *cP = (unsigned char *)x->track_chunk[mfTrack].chunk_type;
     char            buf[4];
     char            type[5];
-    uint32_t          n, len;
+    uint32_t        n, len;
 
     if (x->fP == NULL)
     {
@@ -1279,7 +1279,7 @@ static int midifile_read_track_chunk(t_midifile *x, int mfTrack)
         pd_error (x, "midifile: Unable to allocate %d bytes for track data", len);
         return 0;
     }
-    x->track_chunk[mfTrack].track_data = (unsigned char*)cP;	
+    x->track_chunk[mfTrack].track_data = (unsigned char*)cP;
     n = (uint32_t)fread(cP, 1L, len, x->fP);
 
     return 1;
@@ -1300,7 +1300,7 @@ static unsigned long midifile_get_multibyte_4(unsigned char*n)
     a = (*(unsigned long *)(&n[0])) & 0x0FF;
     b = (*(unsigned long *)(&n[1])) & 0x0FF;
     c = (*(unsigned long *)(&n[2])) & 0x0FF;
-    d = (*(unsigned long *)(&n[3])) &0x0FF;
+    d = (*(unsigned long *)(&n[3])) & 0x0FF;
     e = (a<<24) + (b<<16) + (c<<8) + d;
     return e;
 }
@@ -1423,7 +1423,7 @@ static void midifile_set_track(t_midifile *x, t_floatarg track)
         post ("midifile track not between 0 and %d; using %d.", MAX_TRACKS, x->track);
         return;
       }
-      else 
+      else
       {
         x->track = track; // possibly update x->header_chunk.chunk_ntrks
         if (x->track_chunk[x->track].track_data == NULL)
@@ -1505,7 +1505,7 @@ static uint32_t midifile_get_next_track_chunk_delta_time(t_midifile *x, int mfTr
 * first_byte is followed by len bytes at cP
 */
 static void midifile_output_long_list (t_outlet *outlet, unsigned char *cP, uint32_t len, unsigned char first_byte)
-{ 
+{
     uint32_t          slen;
     unsigned int    si;
     t_atom          *slist;
