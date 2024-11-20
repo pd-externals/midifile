@@ -904,7 +904,7 @@ static void midifile_bang(t_midifile *x)
                 outlet_bang(x->status_outlet);
                 ++x->ended;
             }
-            /* fall through into mfWriting */
+            /* falls through */
         case mfWriting:
             ++x->total_time;
             outlet_float(x->total_time_outlet, x->total_time);
@@ -2124,7 +2124,7 @@ static void midifile_skip_next_track_chunk_data(t_midifile *x, int mfTrack)
                         case 0x2F:
                             if (x->verbosity) post ("midifile: End of Track %d", mfTrack);
                             delta_time = NO_MORE_ELEMENTS;
-                            /* fall through to default....*/
+                            /* falls through */
                         default:
                             cP += len;
                             break;
