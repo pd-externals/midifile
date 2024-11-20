@@ -111,9 +111,9 @@ static void midifile_dump_track_chunk_data(t_midifile *x, int mfTrack);
 static unsigned char *midifile_read_var_len (unsigned char *cP, uint32_t *delta);
 static int midifile_write_variable_length_value (FILE *fP, uint32_t value);
 static unsigned short midifile_combine_bytes(unsigned char data1, unsigned char data2);
-static unsigned short midifile_get_multibyte_2(unsigned char*n);
-static unsigned long midifile_get_multibyte_3(unsigned char*n);
-static unsigned long midifile_get_multibyte_4(unsigned char*n);
+static unsigned short midifile_get_multibyte_2(unsigned char n[2]);
+static unsigned long midifile_get_multibyte_3(unsigned char n[3]);
+static unsigned long midifile_get_multibyte_4(unsigned char n[4]);
 static int midifile_read_track_chunk(t_midifile *x, int mfTrack);
 static int midifile_read_header_chunk(t_midifile *x);
 static void midifile_rewind (t_midifile *x);
@@ -1292,7 +1292,7 @@ static unsigned short midifile_combine_bytes(unsigned char data1, unsigned char 
     return ((((unsigned short)data2)<< 7) | ((unsigned short)data1));
 }
 
-static unsigned long midifile_get_multibyte_4(unsigned char*n)
+static unsigned long midifile_get_multibyte_4(unsigned char n[4])
 /** make a long from 4 consecutive bytes in big-endian format
 */
 {
@@ -1302,7 +1302,7 @@ static unsigned long midifile_get_multibyte_4(unsigned char*n)
             ((unsigned long)n[3]<< 0));
 }
 
-static unsigned long midifile_get_multibyte_3(unsigned char*n)
+static unsigned long midifile_get_multibyte_3(unsigned char n[3])
 /** make a long from 3 consecutive bytes in big-endian format
 */
 {
@@ -1311,7 +1311,7 @@ static unsigned long midifile_get_multibyte_3(unsigned char*n)
             ((unsigned long)n[2]<< 0));
 }
 
-static unsigned short midifile_get_multibyte_2(unsigned char*n)
+static unsigned short midifile_get_multibyte_2(unsigned char n[2])
 /** make a short from 2 consecutive bytes in big-endian format
 */
 {
