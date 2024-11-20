@@ -1422,7 +1422,7 @@ static void midifile_set_track(t_midifile *x, t_floatarg track)
             /* this track is being used for the first time */
             post("this track (%d) is being used for the first time", x->track);
             x->tmpFP[x->track] = midifile_open_track_file(x, x->track);//tmpfile(); /* a temporary file for the MIDI data while we don't know how long it is */
-            strncpy (x->track_chunk[x->track].chunk_type, "MTrk", 4L);
+            memcpy(x->track_chunk[x->track].chunk_type, "MTrk", 4L);
             x->track_chunk[x->track].chunk_length = 0L; /* for now */
             x->track_chunk[x->track].track_ended = 0;
         }
