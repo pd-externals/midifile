@@ -1296,36 +1296,27 @@ static unsigned long midifile_get_multibyte_4(unsigned char*n)
 /** make a long from 4 consecutive bytes in big-endian format
 */
 {
-    unsigned long a, b, c, d, e;
-    a = (*(unsigned long *)(&n[0])) & 0x0FF;
-    b = (*(unsigned long *)(&n[1])) & 0x0FF;
-    c = (*(unsigned long *)(&n[2])) & 0x0FF;
-    d = (*(unsigned long *)(&n[3])) & 0x0FF;
-    e = (a<<24) + (b<<16) + (c<<8) + d;
-    return e;
+    return (((unsigned long)n[0]<<24) +
+            ((unsigned long)n[1]<<16) +
+            ((unsigned long)n[2]<< 8) +
+            ((unsigned long)n[3]<< 0));
 }
 
 static unsigned long midifile_get_multibyte_3(unsigned char*n)
 /** make a long from 3 consecutive bytes in big-endian format
 */
 {
-    unsigned long   a, b, c, d;
-    a = (*(unsigned long *)(&n[0])) & 0x0FF;
-    b = (*(unsigned long *)(&n[1])) & 0x0FF;
-    c = (*(unsigned long *)(&n[2])) & 0x0FF;
-    d = (a<<16) + (b<<8) + c;
-    return d;
+    return (((unsigned long)n[0]<<16) +
+            ((unsigned long)n[1]<< 8) +
+            ((unsigned long)n[2]<< 0));
 }
 
 static unsigned short midifile_get_multibyte_2(unsigned char*n)
 /** make a short from 2 consecutive bytes in big-endian format
 */
 {
-    unsigned short  a, b, c;
-    a = (*(unsigned long *)(&n[0])) & 0x0FF;
-    b = (*(unsigned long *)(&n[1])) & 0x0FF;
-    c = (a<<8) + b;
-    return c;
+    return (((unsigned long)n[0]<< 8) +
+            ((unsigned long)n[1]<< 0));
 }
 
 
