@@ -1,0 +1,9 @@
+#N canvas 966 262 200 200 10;
+#N canvas 19 48 420 300 META 0;
+#X text 10 10 META tmidifile meta file;
+#X text 10 30 NAME midifile;
+#X text 10 51 AUTHOR Martin Peach;
+#X text 10 90 LICENSE ?\GPL;
+#X text 10 110 VERSION 0.4;
+#X text 10 70 DESCRIPTION External to parse and write MIDI files;
+#X restore 10 10 pd META;
