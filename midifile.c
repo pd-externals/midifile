@@ -33,6 +33,10 @@
 #define sys_fclose fclose
 #endif
 
+#ifndef VERSION
+# define VERSION "0.4"
+#endif
+
 #define NO_MORE_ELEMENTS 0xFFFFFFFF
 
 static t_class *midifile_class;
@@ -159,7 +163,7 @@ void midifile_setup(void);
 */
 void midifile_setup(void)
 {
-    const char aStr[] = "midifile v0.4 20200321 by Martin Peach";
+    const char aStr[] = "midifile v" VERSION " by Martin Peach";
 
     midifile_class = class_new (gensym("midifile"),
                                 (t_newmethod) midifile_new,
