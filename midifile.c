@@ -1382,7 +1382,7 @@ static unsigned char *midifile_read_var_len (unsigned char *cP, uint32_t *delta)
 static void midifile_verbosity(t_midifile *x, t_floatarg verbosity)
 {
     x->verbosity = (int)verbosity;
-    post ("midifile verbosity is %d", x->verbosity);
+    if (x->verbosity) post("midifile verbosity is %d", x->verbosity);
 }
 
 /** midifile_set_track implements the track message.
