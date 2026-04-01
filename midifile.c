@@ -115,9 +115,9 @@ static void midifile_dump_track_chunk_data(t_midifile *x, int mfTrack);
 static unsigned char *midifile_read_var_len (unsigned char *cP, uint32_t *delta);
 static int midifile_write_variable_length_value (FILE *fP, uint32_t value);
 static unsigned short midifile_combine_bytes(unsigned char data1, unsigned char data2);
-static unsigned short midifile_get_multibyte_2(unsigned char n[2]);
-static unsigned long midifile_get_multibyte_3(unsigned char n[3]);
-static unsigned long midifile_get_multibyte_4(unsigned char n[4]);
+static unsigned short midifile_get_multibyte_2(unsigned char *n);
+static unsigned long midifile_get_multibyte_3(unsigned char *n);
+static unsigned long midifile_get_multibyte_4(unsigned char *n);
 static int midifile_read_track_chunk(t_midifile *x, int mfTrack);
 static int midifile_read_header_chunk(t_midifile *x);
 static void midifile_rewind (t_midifile *x);
@@ -126,7 +126,7 @@ static int midifile_read_chunks(t_midifile *x);
 static void midifile_close(t_midifile *x);
 static void midifile_free_file(t_midifile *x);
 static void midifile_free(t_midifile *x);
-static int midifile_open_path(t_midifile *x, const char *path, char *mode);
+static int midifile_open_path(t_midifile *x, char *path, char *mode);
 static void midifile_flush(t_midifile *x);
 static uint32_t midifile_write_header(t_midifile *x, int nTracks);
 static void midifile_read(t_midifile *x, t_symbol *path);
@@ -143,6 +143,7 @@ static void *midifile_new(t_symbol *s, int argc, t_atom *argv);
 static void midifile_verbosity(t_midifile *x, t_floatarg verbosity);
 static void midifile_set_track(t_midifile *x, t_floatarg track);
 static void midifile_dump(t_midifile *x, t_floatarg track);
+static void midifile_dump_notes(t_midifile *x, t_floatarg track);
 static t_symbol *midifile_key_name(int sf, int mi);
 void midifile_setup(void);
 
@@ -179,6 +180,7 @@ void midifile_setup(void)
     class_addmethod(midifile_class, (t_method)midifile_write, gensym("write"), A_GIMME, 0);
     class_addmethod(midifile_class, (t_method)midifile_meta, gensym("meta"), A_GIMME, 0);
     class_addmethod(midifile_class, (t_method)midifile_dump, gensym("dump"), A_DEFFLOAT, 0);
+    class_addmethod(midifile_class, (t_method)midifile_dump_notes, gensym("dump_notes"), A_DEFFLOAT, 0);
     class_addmethod(midifile_class, (t_method)midifile_set_track, gensym("track"), A_DEFFLOAT, 0);
     class_addmethod(midifile_class, (t_method)midifile_rewind, gensym("rewind"), 0);
     class_addmethod(midifile_class, (t_method)midifile_verbosity, gensym("verbose"), A_DEFFLOAT, 0);
@@ -304,7 +306,7 @@ static void midifile_free(t_midifile *x)
     - x->fPath will be used as a file name to open.
     - Returns 1 if successful, else 0.
 */
-static int midifile_open_path(t_midifile *x, const char *path, char *mode)
+static int midifile_open_path(t_midifile *x, char *path, char *mode)
 {
     FILE    *fP = NULL;
     char    tryPath[PATH_BUF_SIZE];
@@ -1296,7 +1298,7 @@ static unsigned short midifile_combine_bytes(unsigned char data1, unsigned char 
     return ((((unsigned short)data2)<< 7) | ((unsigned short)data1));
 }
 
-static unsigned long midifile_get_multibyte_4(unsigned char n[4])
+static unsigned long midifile_get_multibyte_4(unsigned char *n)
 /** make a long from 4 consecutive bytes in big-endian format
  */
 {
@@ -1306,7 +1308,7 @@ static unsigned long midifile_get_multibyte_4(unsigned char n[4])
             ((unsigned long)n[3]<< 0));
 }
 
-static unsigned long midifile_get_multibyte_3(unsigned char n[3])
+static unsigned long midifile_get_multibyte_3(unsigned char *n)
 /** make a long from 3 consecutive bytes in big-endian format
  */
 {
@@ -1315,7 +1317,7 @@ static unsigned long midifile_get_multibyte_3(unsigned char n[3])
             ((unsigned long)n[2]<< 0));
 }
 
-static unsigned short midifile_get_multibyte_2(unsigned char n[2])
+static unsigned short midifile_get_multibyte_2(unsigned char *n)
 /** make a short from 2 consecutive bytes in big-endian format
  */
 {
@@ -1521,6 +1523,178 @@ static void midifile_output_long_list (t_outlet *outlet, unsigned char *cP, uint
     }
     outlet_list(outlet, &s_list, len+1L, slist);
     freebytes(slist, slen);
+}
+
+/** midifile_dump_notes extracts only note events with duration
+ *
+ * Parses MIDI file and outputs only noteOn events with their calculated duration
+ * Output format: [timestamp, note, velocity, duration_in_ticks, channel]
+ * - timestamp: note start time in ticks
+ * - note: MIDI note number (0-127)
+ * - velocity: velocity (0-127)
+ * - duration_in_ticks: note duration in ticks (from noteOn to noteOff)
+ * - channel: MIDI channel (0-15)
+ * Much faster than dump() as it skips all other MIDI events
+ */
+static void midifile_dump_notes(t_midifile *x, t_floatarg track)
+{
+    int mfTrack = (int)track;
+    unsigned char *cP, *last_cP;
+    uint32_t total_time, delta_time;
+    unsigned char status, running_status = 0, c, d;
+    t_atom output_atom[5];
+    
+    if(x->state != mfReading) return; /* only if reading */
+    
+    /* Array to track pending noteOn events: [note<<8|channel] -> {timestamp, velocity} */
+    /* Declared OUTSIDE the loop to be shared across all tracks */
+    int pendingNotes[256];  /* 256 = 16 channels * 16 notes max per channel */
+    int pendingCount = 0;
+    
+    /* Parse all tracks or a specific track */
+    int startTrack = (mfTrack >= 0 && mfTrack < x->header_chunk.chunk_ntrks) ? mfTrack : 0;
+    int endTrack = (mfTrack >= 0 && mfTrack < x->header_chunk.chunk_ntrks) ? mfTrack + 1 : x->header_chunk.chunk_ntrks;
+    
+    for (int t = startTrack; t < endTrack; ++t)
+    {
+        cP = x->track_chunk[t].track_data;
+        last_cP = x->track_chunk[t].track_data + x->track_chunk[t].chunk_length;
+        total_time = 0L;
+        running_status = 0;
+        
+        while ((cP != NULL) && (cP < last_cP))
+        {
+            cP = midifile_read_var_len(cP, &delta_time);
+            if (delta_time == NO_MORE_ELEMENTS) break;
+            
+            total_time += delta_time;
+            status = *cP++;
+            
+            /* Handle running status and meta events */
+            if ((status & 0xF0) == 0xF0)
+            {
+                /* Meta events or system messages - skip */
+                uint32_t skipLen = 0;
+                if (status == 0xFF)
+                {
+                    /* Meta event: skip type + length */
+                    cP++;  /* Skip meta type */
+                    cP = midifile_read_var_len(cP, &skipLen);  /* Read length */
+                    cP += skipLen;  /* Skip data */
+                }
+                else if (status == 0xF0 || status == 0xF7)
+                {
+                    /* SysEx: skip length + data */
+                    cP = midifile_read_var_len(cP, &skipLen);  /* Read length */
+                    cP += skipLen;  /* Skip data */
+                }
+                else
+                {
+                    /* Other system messages - skip 0-2 bytes depending on type */
+                    if (status == 0xF1 || status == 0xF3) cP++;  /* 1 byte */
+                    else if (status == 0xF2) cP += 2;  /* 2 bytes */
+                }
+                running_status = 0;  /* Clear running status */
+                continue;
+            }
+            
+            /* Handle running status for channel messages */
+            if (status & 0x80)
+            {
+                running_status = status;
+                c = *cP++;
+            }
+            else
+            {
+                c = status;
+                status = running_status;
+            }
+            
+            /* Extract MIDI channel (lower 4 bits) */
+            int channel = status & 0x0F;
+            
+            /* Process only noteOn (0x9n) and noteOff (0x8n) */
+            if ((status & 0xF0) == 0x90 || (status & 0xF0) == 0x80)
+            {
+                d = *cP++;
+                
+                /* Determine if it's a noteOn or noteOff */
+                int isNoteOn = 0;
+                if ((status & 0xF0) == 0x90 && d > 0)
+                {
+                    isNoteOn = 1;  /* noteOn with velocity > 0 */
+                }
+                else if ((status & 0xF0) == 0x90 && d == 0)
+                {
+                    isNoteOn = 0;  /* noteOn with velocity = 0 = noteOff */
+                }
+                else if ((status & 0xF0) == 0x80)
+                {
+                    isNoteOn = 0;  /* noteOff */
+                }
+                
+                if (isNoteOn)
+                {
+                    /* Store pending noteOn: [note<<8|channel] -> timestamp */
+                    int key = (c << 8) | channel;
+                    pendingNotes[pendingCount++] = key;
+                    pendingNotes[pendingCount++] = total_time;  /* timestamp */
+                    pendingNotes[pendingCount++] = d;            /* velocity */
+                }
+                else
+                {
+                    /* It's a noteOff - find the LAST matching noteOn */
+                    int key = (c << 8) | channel;
+                    int foundIndex = -1;
+                    
+                    /* Find the last matching noteOn (most recent) */
+                    for (int i = 0; i < pendingCount; i += 3)
+                    {
+                        if (pendingNotes[i] == key)
+                        {
+                            foundIndex = i;  /* Keep the last found */
+                        }
+                    }
+                    
+                    if (foundIndex >= 0)
+                    {
+                        /* Found! Calculate duration */
+                        uint32_t noteOnTime = pendingNotes[foundIndex + 1];
+                        int velocity = pendingNotes[foundIndex + 2];
+                        uint32_t duration = total_time - noteOnTime;
+                        
+                        /* Output: [timestamp, note, velocity, duration_in_ticks, channel] */
+                        SETFLOAT(&output_atom[0], noteOnTime);  /* Timestamp of noteOn */
+                        SETFLOAT(&output_atom[1], c);            /* Note */
+                        SETFLOAT(&output_atom[2], velocity);     /* Velocity of noteOn */
+                        SETFLOAT(&output_atom[3], duration);     /* Duration in ticks */
+                        SETFLOAT(&output_atom[4], channel);      /* MIDI channel (0-15) */
+                        
+                        outlet_list(x->midi_list_outlet, &s_list, 5, output_atom);
+                        
+                        /* Remove from list (shift following elements) */
+                        for (int j = foundIndex; j < pendingCount - 3; j++)
+                        {
+                            pendingNotes[j] = pendingNotes[j + 3];
+                        }
+                        pendingCount -= 3;
+                    }
+                }
+            }
+            else
+            {
+                /* Skip other MIDI events (controllers, program change, etc.) */
+                if ((status & 0xF0) == 0xA0 || (status & 0xF0) == 0xB0 || (status & 0xF0) == 0xE0)
+                {
+                    cP++;  /* Skip second byte (2 bytes total) */
+                }
+                else if ((status & 0xF0) == 0xC0 || (status & 0xF0) == 0xD0)
+                {
+                    /* 1 byte only, already read */
+                }
+            }
+        }
+    }
 }
 
 /** parse entire track chunk and output it to the main window
